@@ -42,7 +42,7 @@ use glium::implement_vertex;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "vulkano")]
-use bytemuck::{Pod, Zeroable};
+use vulkano::buffer::BufferContents;
 #[cfg(feature = "vulkano")]
 use vulkano::pipeline::graphics::vertex_input::Vertex as VulkanoVertex;
 
@@ -93,7 +93,7 @@ pub trait FromRawVertex<I>: Sized {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
+#[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct Vertex {
     /// Position vector of a vertex.
     #[format(R32G32B32_SFLOAT)]
@@ -178,7 +178,7 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for Vertex {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
+#[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct Position {
     /// Position vector of a vertex.
     #[format(R32G32B32_SFLOAT)]
@@ -246,7 +246,7 @@ impl<I: FromPrimitive> FromRawVertex<I> for Position {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
+#[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct TexturedVertex {
     /// Position vector of a vertex.
     #[format(R32G32B32_SFLOAT)]
