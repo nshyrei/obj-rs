@@ -16,7 +16,7 @@ dome.indices;
 # Ok::<(), obj::ObjError>(())
 ```
 
-<img alt="Rendered image of cute Rilakkuma" src="https://i.hyeon.me/obj-rs/bear.png" style="max-width:100%">
+<img src="https://simnalamburt.github.io/obj-rs/screenshot.png" style="max-width:100%">
 
 [obj]: https://en.wikipedia.org/wiki/Wavefront_.obj_file
 [GitHub]: https://github.com/simnalamburt/obj-rs
@@ -30,7 +30,7 @@ pub mod raw;
 
 pub use crate::error::{LoadError, LoadErrorKind, ObjError, ObjResult};
 
-use crate::error::{index_out_of_range, make_error};
+use crate::error::make_error;
 use crate::raw::object::Polygon;
 use num_traits::FromPrimitive;
 use std::collections::hash_map::{Entry, HashMap};
@@ -44,7 +44,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "vulkano")]
 use bytemuck::{Pod, Zeroable};
 #[cfg(feature = "vulkano")]
-use vulkano::impl_vertex;
+use vulkano::pipeline::graphics::vertex_input::Vertex as VulkanoVertex;
 
 /// Load a wavefront OBJ file into Rust & OpenGL friendly format.
 pub fn load_obj<V: FromRawVertex<I>, T: BufRead, I>(input: T) -> ObjResult<Obj<V, I>> {
@@ -53,7 +53,7 @@ pub fn load_obj<V: FromRawVertex<I>, T: BufRead, I>(input: T) -> ObjResult<Obj<V
 }
 
 /// 3D model object loaded from wavefront OBJ.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Default)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Obj<V = Vertex, I = u16> {
     /// Object's name.
@@ -93,18 +93,18 @@ pub trait FromRawVertex<I>: Sized {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod))]
+#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
 pub struct Vertex {
     /// Position vector of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub position: [f32; 3],
-    /// Normal vertor of a vertex.
+    /// Normal vector of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub normal: [f32; 3],
 }
 
 #[cfg(feature = "glium")]
 implement_vertex!(Vertex, position, normal);
-#[cfg(feature = "vulkano")]
-impl_vertex!(Vertex, position, normal);
 
 impl<I: FromPrimitive + Copy> FromRawVertex<I> for Vertex {
     fn process(
@@ -130,7 +130,10 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for Vertex {
                         };
                         let index = match I::from_usize(vb.len()) {
                             Some(val) => val,
-                            None => return index_out_of_range::<_, I>(vb.len()),
+                            None => make_error!(
+                                IndexOutOfRange,
+                                number_of_polygons_is_too_large_error_message::<I>(vb.len())
+                            ),
                         };
                         vb.push(vertex);
                         entry.insert(index);
@@ -175,16 +178,15 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for Vertex {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod))]
+#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
 pub struct Position {
     /// Position vector of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub position: [f32; 3],
 }
 
 #[cfg(feature = "glium")]
 implement_vertex!(Position, position);
-#[cfg(feature = "vulkano")]
-impl_vertex!(Position, position);
 
 impl<I: FromPrimitive> FromRawVertex<I> for Position {
     fn process(
@@ -204,7 +206,10 @@ impl<I: FromPrimitive> FromRawVertex<I> for Position {
             let mut map = |pi: usize| -> ObjResult<()> {
                 ib.push(match I::from_usize(pi) {
                     Some(val) => val,
-                    None => return index_out_of_range::<_, I>(pi),
+                    None => make_error!(
+                        IndexOutOfRange,
+                        number_of_polygons_is_too_large_error_message::<I>(ib.len())
+                    ),
                 });
                 Ok(())
             };
@@ -241,20 +246,21 @@ impl<I: FromPrimitive> FromRawVertex<I> for Position {
 #[derive(Default, Copy, PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "vulkano", repr(C))]
-#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod))]
+#[cfg_attr(feature = "vulkano", derive(Zeroable, Pod, VulkanoVertex))]
 pub struct TexturedVertex {
     /// Position vector of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub position: [f32; 3],
-    /// Normal vertor of a vertex.
+    /// Normal vector of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub normal: [f32; 3],
     /// Texture of a vertex.
+    #[format(R32G32B32_SFLOAT)]
     pub texture: [f32; 3],
 }
 
 #[cfg(feature = "glium")]
 implement_vertex!(TexturedVertex, position, normal, texture);
-#[cfg(feature = "vulkano")]
-impl_vertex!(TexturedVertex, position, normal, texture);
 
 impl<I: FromPrimitive + Copy> FromRawVertex<I> for TexturedVertex {
     fn process(
@@ -282,7 +288,10 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for TexturedVertex {
                         };
                         let index = match I::from_usize(vb.len()) {
                             Some(val) => val,
-                            None => return index_out_of_range::<_, I>(vb.len()),
+                            None => make_error!(
+                                IndexOutOfRange,
+                                number_of_polygons_is_too_large_error_message::<I>(vb.len())
+                            ),
                         };
                         vb.push(vertex);
                         entry.insert(index);
@@ -310,6 +319,14 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for TexturedVertex {
         vb.shrink_to_fit();
         Ok((vb, ib))
     }
+}
+
+fn number_of_polygons_is_too_large_error_message<I>(len: usize) -> String {
+    format!(
+        "The number of polygons {} is too large for the specified type {} while loading the 3D OBJ model.",
+        len,
+        std::any::type_name::<I>(),
+    )
 }
 
 #[cfg(feature = "glium")]
