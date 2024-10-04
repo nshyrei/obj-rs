@@ -96,10 +96,10 @@ pub trait FromRawVertex<I>: Sized {
 #[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct Vertex {
     /// Position vector of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub position: [f32; 3],
     /// Normal vector of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub normal: [f32; 3],
 }
 
@@ -181,7 +181,7 @@ impl<I: FromPrimitive + Copy> FromRawVertex<I> for Vertex {
 #[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct Position {
     /// Position vector of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub position: [f32; 3],
 }
 
@@ -249,13 +249,13 @@ impl<I: FromPrimitive> FromRawVertex<I> for Position {
 #[cfg_attr(feature = "vulkano", derive(VulkanoVertex, BufferContents))]
 pub struct TexturedVertex {
     /// Position vector of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub position: [f32; 3],
     /// Normal vector of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub normal: [f32; 3],
     /// Texture of a vertex.
-    #[format(R32G32B32_SFLOAT)]
+    #[cfg_attr(feature = "vulkano", format(R32G32B32_SFLOAT))]
     pub texture: [f32; 3],
 }
 
